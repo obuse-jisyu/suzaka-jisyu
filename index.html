@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>すざか自習室 | 須坂駅前botaの中学生向け学習スペース</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#dcfce7', // green-100 (botaのイメージに合わせて少し緑寄りに調整)
+                            main: '#22c55e',  // green-500
+                            dark: '#16a34a',  // green-600
+                            deep: '#14532d',  // green-900
+                            accent: '#f59e0b', // amber-500
+                            bg: '#f8fafc',    // slate-50
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        rounded: ['"Zen Maru Gothic"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .hero-bg {
+            /* 勉強している画像 */
+            background-image: url('https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1973&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        /* アニメーション */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icon Component
+        const Icon = ({ name, size = 24, className }) => {
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
+            return <i data-lucide={name} width={size} height={size} className={className}></i>;
+        };
+
+        // Button Component
+        const Button = ({ children, className, onClick, isLine = false }) => (
+            <button 
+                onClick={onClick}
+                className={`w-full md:w-auto px-10 py-4 rounded-full font-bold text-lg shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3 ${
+                    isLine 
+                    ? 'bg-[#06c755] text-white hover:bg-[#05b34c]' 
+                    : 'bg-brand-main text-white hover:bg-brand-dark'
+                } ${className}`}
+            >
+                {children}
+            </button>
+        );
+
+        // Section Title Component
+        const SectionHeader = ({ title, subtitle }) => (
+            <div className="text-center mb-16">
+                {subtitle && <span className="block text-brand-main font-bold mb-2 tracking-wider uppercase text-sm">{subtitle}</span>}
+                <h2 className="text-2xl md:text-4xl font-bold text-brand-deep font-rounded inline-block relative z-10 tracking-tight">
+                    {title}
+                    <span className="absolute bottom-1 left-0 w-full h-3 bg-brand-light -z-10 rounded-full opacity-70"></span>
+                </h2>
+            </div>
+        );
+
+        // Feature Card Component
+        const FeatureCard = ({ number, title, desc, icon }) => (
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden group h-full">
+                <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-light rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+                <div className="relative z-10">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 bg-brand-main text-white rounded-2xl flex items-center justify-center text-2xl font-bold font-rounded shadow-md transform group-hover:rotate-6 transition-transform">
+                            {number}
+                        </div>
+                        <h3 className="text-xl font-bold text-brand-deep">{title}</h3>
+                    </div>
+                    <div className="mb-4 text-brand-main">
+                        <Icon name={icon} size={40} />
+                    </div>
+                    <p className="text-gray-600 leading-relaxed font-medium">
+                        {desc}
+                    </p>
+                </div>
+            </div>
+        );
+
+        // FAQ Accordion Component
+        const Accordion = ({ question, answer }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            return (
+                <div className={`border rounded-xl mb-4 bg-white overflow-hidden transition-all duration-300 ${isOpen ? 'shadow-md border-brand-main' : 'border-gray-200 shadow-sm'}`}>
+                    <button 
+                        className="w-full px-6 py-5 flex justify-between items-start text-left focus:outline-none bg-white hover:bg-green-50 transition-colors"
+                        onClick={() => setIsOpen(!isOpen)}
+                    >
+                        <span className="text-lg font-bold text-brand-deep flex gap-3 leading-relaxed">
+                            <span className="text-brand-main font-black">Q.</span> {question}
+                        </span>
+                        <span className={`transform transition-transform duration-300 text-brand-main mt-1 ${isOpen ? 'rotate-180' : ''}`}>
+                            <Icon name="chevron-down" />
+                        </span>
+                    </button>
+                    <div 
+                        className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+                    >
+                        <div className="px-6 pb-8 pt-2 text-gray-700 leading-relaxed border-t border-dashed border-gray-200 bg-brand-light/20">
+                            <div className="flex gap-3">
+                                <span className="font-bold text-brand-main mt-1">A.</span>
+                                <div>{answer}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, []);
+
+            const scrollToContact = () => {
+                document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+            };
+
+            const openLine = () => {
+                window.open('https://lin.ee/nY2BAmR', '_blank'); // 実際の須坂自習室用LINEリンクに変更が必要であれば差し替えてください
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col overflow-x-hidden">
+                    
+                    {/* Header / Nav */}
+                    <header className="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100">
+                        <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+                            <div className="font-rounded font-bold text-xl md:text-2xl text-brand-deep flex items-center gap-2">
+                                <Icon name="book-open" className="text-brand-main fill-current" />
+                                すざか自習室
+                            </div>
+                            <button 
+                                onClick={openLine}
+                                className="hidden md:flex items-center gap-2 bg-[#06c755] text-white px-5 py-2 rounded-full font-bold text-sm hover:bg-[#05b34c] transition-colors shadow-md"
+                            >
+                                <Icon name="message-circle" size={18} />
+                                LINEで予約
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Hero Section */}
+                    <section className="relative h-screen min-h-[660px] flex items-center justify-center pt-16 hero-bg">
+                        <div className="absolute inset-0 bg-brand-deep/30"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/60 via-transparent to-transparent"></div>
+                        
+                        <div className="relative z-10 w-full max-w-6xl mx-auto px-4 flex justify-start md:justify-end items-center h-full pb-10 md:pb-0">
+                            <div className="glass-panel p-6 md:p-10 rounded-3xl shadow-2xl max-w-lg animate-fade-in border-t-8 border-brand-main mt-auto md:mt-0 md:mb-12">
+                                {/* Modified Header Block */}
+                                <div className="mb-6 border-b-2 border-brand-main/20 pb-5 text-center">
+                                    <div className="inline-block bg-brand-accent text-white font-bold px-4 py-1 rounded-full mb-3 text-sm tracking-wide">
+                                        中学1年生〜3年生 対象
+                                    </div>
+                                    <h2 className="text-2xl md:text-4xl font-black text-brand-deep font-rounded tracking-wide mt-1 leading-relaxed">
+                                        <span className="block text-lg md:text-xl text-brand-main mb-2 pt-6">完全予約制</span>
+                                        中学生対象<br/>すざか自習室
+                                    </h2>
+                                </div>
+
+                                <h1 className="font-rounded font-extrabold text-lg md:text-2xl leading-tight text-brand-deep mb-6 tracking-tight">
+                                    「家で集中できない」を、<br/>
+                                    <span className="text-brand-main border-b-4 border-brand-light">密度の濃い集中時間</span>に変える。
+                                </h1>
+                                <p className="text-gray-700 font-medium mb-8 leading-relaxed text-sm md:text-base">
+                                    須坂駅前 botaで、今まで以上の集中体験を。<br className="hidden md:block"/>
+                                    開放的な学習空間で、学習習慣と自信を底上げします。
+                                </p>
+                                
+                                <div className="space-y-3 mb-8">
+                                    <div className="flex items-center gap-3 text-sm md:text-base text-brand-deep bg-green-50/80 p-3 rounded-lg border border-green-100">
+                                        <Icon name="calendar-clock" className="text-brand-main shrink-0" />
+                                        <span className="font-bold">毎週 火曜・金曜 18:00〜20:00</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm md:text-base text-brand-deep bg-green-50/80 p-3 rounded-lg border border-green-100">
+                                        <Icon name="map-pin" className="text-brand-main shrink-0" />
+                                        <span className="font-bold">須坂駅前 bota (シルキー1F)</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm md:text-base text-brand-deep bg-green-50/80 p-3 rounded-lg border border-green-100">
+                                        <Icon name="coins" className="text-brand-main shrink-0" />
+                                        <span className="font-bold">1時間 500円（都度払い）</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <Button isLine onClick={openLine} className="shadow-xl mx-auto">
+                                        <Icon name="message-circle" />
+                                        公式LINEで予約する
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Empathy Section */}
+                    <section className="py-20 px-4 bg-white relative">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="text-center mb-16">
+                                <p className="text-brand-main font-bold mb-3 flex items-center justify-center gap-2">
+                                    <Icon name="message-square" size={20} />
+                                    保護者の方からよく聞くお悩み
+                                </p>
+                                <h2 className="text-xl md:text-4xl font-bold text-gray-700 font-rounded tracking-tight">
+                                    お子様の様子を見て、<br className="md:hidden" />こんなこと感じていませんか？
+                                </h2>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {[
+                                    { text: "家だとスマホやテレビの誘惑に負けてしまう", icon: "smartphone-off" },
+                                    { text: "テスト前しか勉強に身が入らない", icon: "alert-triangle" },
+                                    { text: "塾に行くほどではないけれど、集中できる場所が欲しい", icon: "school" },
+                                    { text: "夜の時間をダラダラ過ごしてしまうのがもったいない", icon: "moon" }
+                                ].map((item, i) => (
+                                    <div key={i} className="flex items-center gap-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="bg-brand-light p-3 rounded-full text-brand-main shrink-0">
+                                            <Icon name={item.icon} />
+                                        </div>
+                                        <p className="font-bold text-gray-700">{item.text}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-16 text-center">
+                                <div className="inline-block p-10 rounded-3xl bg-brand-main/5 border-2 border-brand-main/20 relative">
+                                    <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-brand-main text-white px-6 py-2 rounded-full font-bold shadow-lg">
+                                        SOLUTION
+                                    </div>
+                                    <h3 className="text-lg md:text-3xl font-bold text-brand-deep mb-4 font-rounded">
+                                        その悩み、<br className="md:hidden" />駅前の集中できる学習環境が解決します。
+                                    </h3>
+                                    <p className="text-gray-600 font-medium">
+                                        環境を変えるだけで、お子様のスイッチは入ります。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Benefits Section */}
+                    <section className="py-24 px-4 bg-brand-bg relative overflow-hidden">
+                        {/* Decorative background elements */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-light rounded-full filter blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"></div>
+                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-light rounded-full filter blur-3xl opacity-50 transform -translate-x-1/2 translate-y-1/2"></div>
+
+                        <div className="max-w-6xl mx-auto relative z-10">
+                            <SectionHeader title="すざか自習室が選ばれる理由" subtitle="WHY CHOOSE US" />
+                            
+                            <div className="grid md:grid-cols-3 gap-8">
+                                <FeatureCard 
+                                    number="01"
+                                    title="アクセス抜群「駅前bota」"
+                                    desc="須坂駅前のシルキー1F「bota」で開催。明るく開放的なデザイン空間は、カフェのようにリラックスしながらも、適度な緊張感で勉強に没頭できます。"
+                                    icon="zap"
+                                />
+                                <FeatureCard 
+                                    number="02"
+                                    title="無理のない「週2回」"
+                                    desc="火曜日と金曜日の18:00から20:00。学校帰りや部活終わりに立ち寄れる時間設定。平日の夜にリズムを作り、学習習慣を定着させます。"
+                                    icon="calendar-days"
+                                />
+                                <FeatureCard 
+                                    number="03"
+                                    title="安心の都度払い"
+                                    desc="高額な月謝や入会金は不要です。自分のスケジュールに合わせて、1時間単位（500円）で気軽に参加できます。「テスト前だけ」という使い方も可能です。"
+                                    icon="wallet"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Environment / Testimonial-like Section */}
+                    <section className="py-24 px-4 bg-white">
+                        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12">
+                            <div className="w-full md:w-1/2">
+                                <div className="relative rounded-2xl overflow-hidden shadow-2xl transform md:rotate-2 hover:rotate-0 transition-transform duration-500">
+                                    <img src="images/gakusyu.jpg" alt="モダンで明るい学習環境" className="w-full h-auto" />
+                                    <div className="absolute inset-0 bg-brand-deep/10"></div>
+                                </div>
+                            </div>
+                            <div className="w-full md:w-1/2">
+                                <h3 className="text-lg md:text-xl font-bold text-brand-deep mb-4 font-rounded border-l-4 border-brand-main pl-4 leading-relaxed">
+                                    綺麗な空間で<br />仲間が頑張っている姿が見える
+                                </h3>
+                                <p className="text-gray-600 leading-8 mb-6 text-lg">
+                                    個別指導塾でもなく自宅でもない。<br className="hidden md:inline" /><br/>
+                                    botaの洗練された空間には、前向きな空気が流れています。
+                                </p>
+                                <p className="text-gray-600 leading-8 text-lg">
+                                    周りの友だちが真剣に取り組んでいる姿を見ることで、<br className="hidden md:inline" />
+                                    <span className="bg-brand-light px-1 font-bold text-brand-deep">「自分もやらなきゃ」という前向きな気持ち</span>が自然と生まれます。<br className="hidden md:inline" />
+                                    この環境こそが、学習効率を最大化させるのです。
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Information Table */}
+                    <section className="py-20 px-4 bg-brand-bg">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                                <div className="bg-brand-deep text-white p-6 text-center">
+                                    <h3 className="text-2xl font-bold font-rounded">開催概要</h3>
+                                </div>
+                                <div className="p-6 md:p-10">
+                                    <table className="w-full text-left border-collapse">
+                                        <tbody className="divide-y divide-gray-100">
+                                            {[
+                                                { label: "対象", val: "中学1年生 〜 中学3年生" },
+                                                { label: "開催日", val: "毎週 火曜日・金曜日" },
+                                                { label: "時間", val: "18:00 〜 20:00（1時間からの利用も可）" },
+                                                { label: "場所", val: "須坂市 bota（須坂駅前シルキー1F）" },
+                                                { label: "参加費", val: "1時間につき 500円" },
+                                                { label: "持ち物", val: "勉強道具（宿題、参考書、ワークなど）、筆記用具" },
+                                            ].map((row, i) => (
+                                                <tr key={i} className="flex flex-col md:table-row hover:bg-gray-50 transition-colors">
+                                                    <th className="py-4 md:w-48 text-gray-500 font-bold block md:table-cell align-top">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-brand-main md:hidden"></div>
+                                                            {row.label}
+                                                        </div>
+                                                    </th>
+                                                    <td className="py-2 md:py-4 font-bold text-gray-800 block md:table-cell text-lg">{row.val}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Lecturer Introduction Section (NEW) */}
+                    <section className="py-24 px-4 bg-white">
+                        <div className="max-w-4xl mx-auto">
+                            <SectionHeader title="講師紹介" subtitle="INSTRUCTOR" />
+                            <div className="flex flex-col md:flex-row items-center gap-10 bg-white rounded-3xl border border-gray-100 p-8 md:p-12 shadow-lg">
+                                <div className="w-48 h-48 md:w-64 md:h-64 shrink-0 relative overflow-hidden rounded-full border-4 border-brand-light shadow-md">
+                                    {/* 講師の画像をここに設定してください。 */}
+                                    <img 
+                                        src="images/profile.jpg" 
+                                        alt="講師イメージ" 
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="text-left flex-1">
+                                    <h3 className="text-xl md:text-3xl font-bold text-brand-deep mb-2 font-rounded">碓井 雅也 <span className="text-base font-normal text-gray-500 ml-2">Masaya Usui</span></h3>
+                                    <div className="inline-block bg-brand-main text-white px-4 py-1 rounded-full text-sm font-bold mb-6">専任講師</div>
+                                    <ul className="space-y-4 text-gray-600 font-medium text-lg">
+                                        <li className="flex items-center justify-start gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-main shrink-0">
+                                                <Icon name="map-pin" size={18} />
+                                            </div>
+                                            長野県長野市出身
+                                        </li>
+                                        <li className="flex items-center justify-start gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-main shrink-0">
+                                                <Icon name="graduation-cap" size={18} />
+                                            </div>
+                                            長野高校卒業 / 法政大学卒業
+                                        </li>
+                                        <li className="flex items-center justify-start gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-main shrink-0">
+                                                <Icon name="briefcase" size={18} />
+                                            </div>
+                                            都内で進学塾講師の経験あり
+                                        </li>
+                                        <li className="flex items-center justify-start gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-main shrink-0">
+                                                <Icon name="sprout" size={18} />
+                                            </div>
+                                            現在は小布施町で農家
+                                        </li>
+                                    </ul>
+                                    <div className="mt-8 p-6 bg-brand-bg rounded-xl text-gray-600 leading-relaxed text-sm md:text-base border-l-4 border-brand-main">
+                                        「勉強が嫌い」「やり方がわからない」という生徒さんにこそ来てほしいです。<br className="hidden md:inline"/>
+                                        分からないところは何度でも聞いてください。一緒に頑張りましょう！
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* FAQ Section */}
+                    <section className="py-20 px-4 bg-brand-bg">
+                        <div className="max-w-3xl mx-auto">
+                            <SectionHeader title="よくある質問" subtitle="FAQ" />
+                            <div className="space-y-4">
+                                <Accordion 
+                                    question="予約は必要ですか？" 
+                                    answer={
+                                        <span>
+                                            はい、必要です。席数に限りがあるため、<strong className="text-brand-deep">事前の公式LINEからのご予約</strong>をお願いしております。
+                                        </span>
+                                    } 
+                                />
+                                <Accordion 
+                                    question="先生に質問はできますか？" 
+                                    answer={
+                                        <span>
+                                            <strong className="text-brand-deep">はい、もちろん可能です。</strong><br/>
+                                            講師が常に常駐して頻繁に机を周ります。講師側から苦手箇所などを見つけて積極的に声をかけますので、「分からないことがあるけどなかなか質問できない」という内気なお子様でも安心です。<br/>
+                                            また、具体的な問題の解説だけでなく、学習の進め方などのアドバイスも随時行っています。
+                                        </span>
+                                    } 
+                                />
+                                <Accordion 
+                                    question="中学生以外も利用できますか？" 
+                                    answer="現在は中学1年生〜3年生を対象としております。学年を絞ることで、学習に適した環境を維持しています。" 
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Footer / CTA */}
+                    <footer id="contact" className="bg-brand-deep text-white pt-24 pb-12 px-4 relative overflow-hidden">
+                        {/* Decorative Circles */}
+                        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+                            <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white blur-3xl"></div>
+                            <div className="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-brand-main blur-3xl"></div>
+                        </div>
+
+                        <div className="max-w-4xl mx-auto text-center relative z-10">
+                            <h2 className="text-2xl md:text-5xl font-rounded font-bold mb-8 leading-tight tracking-wide">
+                                まず、試しに来てみましょう。
+                            </h2>
+                            <p className="text-green-100 text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed">
+                                集中できる2時間は、家での5時間に匹敵します。<br className="hidden md:block"/>
+                                まずは一度、駅前botaの快適な空間の中でペンを動かしてみませんか？<br className="hidden md:block"/>
+                                私たちは全力でサポートします。
+                            </p>
+                            
+                            <div className="bg-white/10 p-8 md:p-12 rounded-3xl backdrop-blur-md border border-white/20 mb-16 shadow-2xl max-w-lg mx-auto">
+                                <p className="font-bold text-xl mb-8 flex flex-col gap-2">
+                                    <span>LINEで簡単予約</span>
+                                    <span className="text-sm font-normal opacity-80">相談や質問もお気軽にどうぞ</span>
+                                </p>
+                                <div className="flex justify-center">
+                                    <Button isLine onClick={openLine} className="text-xl py-5 shadow-xl hover:shadow-2xl hover:scale-105 mx-auto">
+                                        <Icon name="message-circle" size={28} />
+                                        公式LINEで予約する
+                                    </Button>
+                                </div>
+                            </div>
+                            
+                            <div className="text-sm text-green-200/60 pt-8 border-t border-green-400/30">
+                                <p>&copy; {new Date().getFullYear()} すざか自習室 All Rights Reserved.</p>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
